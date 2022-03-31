@@ -1,48 +1,29 @@
 #include <stdio.h>
 #include <sys/types.h>
 #include <sys/socket.h>
-#include <sys/wait.h>
+#include <sys/select.h>
 #include <unistd.h>
 #include <errno.h>
 #include <string.h>
 #include <ctype.h>
 #include <stdlib.h>
 #include <arpa/inet.h>
-#include <signal.h>
 
 #define PORT        30001
 #define SERVERIP    "0.0.0.0"
-#define BUFSIZE     1024
-
-void callback(int s)
-{
-    int ret;
-    while (1)
-    {
-        ret = waitpid(-1, NULL, WNOHANG);
-        if (ret <= 0)
-        {
-            break;
-        }
-        fprintf(stdout, "%d has exited...\n", ret);
-    }
-}
+#define BUFSIZE     11
 
 int main()
 {
-    int sfd, cfd;
+    int sfd, cfd, maxfd;
     int ret;
     int len;
     int i;
-    pid_t pid;
     socklen_t socklen;
-    char ip[BUFSIZE];
-    char buf[BUFSIZE];
+    fd_set rdset, tmpset;
     struct sockaddr_in saddr, caddr;
-    struct sigaction act;
-
-    memset(ip, 0, BUFSIZE);
-    memset(buf, 0, BUFSIZE);
+    char buf[BUFSIZE];
+    char ip[BUFSIZE];
 
     sfd = socket(AF_INET, SOCK_STREAM, 0);
     if (sfd < 0)
@@ -67,68 +48,61 @@ int main()
         perror("listen");
         exit(1);
     }
-    socklen = sizeof(caddr);
 
-    act.sa_handler = callback;
-    sigfillset(&act.sa_mask);
-    act.sa_flags = 0;
-    sigaction(SIGCHLD, &act, NULL);
+    maxfd = sfd;
+    FD_ZERO(&rdset);
+    FD_SET(sfd, &rdset);
 
     while (1)
     {
-        cfd = accept(sfd, (void *)&caddr, &socklen);
-        if (cfd < 0)
+        tmpset = rdset;
+        ret = select(maxfd + 1, &tmpset, NULL, NULL, NULL);
+        if (FD_ISSET(sfd, &tmpset))
         {
-            if (errno == EINTR)
+            socklen = sizeof(caddr);
+            cfd = accept(sfd, (void *)&caddr, &socklen);
+            if (cfd < 0)
             {
-                continue;
+                perror("accept");
+                exit(1);
             }
-            perror("accept");
-            exit(1);
-        }
-        pid = fork();
-        if (pid < 0)
-        {
-            perror("fork");
-            exit(1);
-        }
-        else if (pid == 0)
-        {
-            close(sfd);
             fprintf(stdout, "[%s]:%d connect ...\n",
                     inet_ntop(AF_INET, &caddr.sin_addr.s_addr, ip, sizeof(ip)),
                     ntohs(caddr.sin_port));
-            while (1)
+            FD_SET(cfd, &rdset);
+            maxfd = cfd > sfd ? cfd : maxfd;
+            ret--;
+        }
+        for (i = 0; i < maxfd + 1 && ret > 0; i++)
+        {
+            if (i != sfd && FD_ISSET(i, &tmpset))
             {
                 memset(buf, 0, BUFSIZE);
-                len = recv(cfd, buf, sizeof(buf) - 1, 0);
+                len = recv(i, buf, sizeof(buf) - 1, 0);
                 buf[len] = 0;
                 if (len == 0)
                 {
                     fprintf(stdout, "data is end...\n");
-                    close(cfd);
-                    exit(0);
+                    FD_CLR(i, &rdset);
+                    close(i);
                 }
                 else if (len < 0)
                 {
                     perror("recv");
-                    close(cfd);
-                    exit(1);
+                    FD_CLR(i, &rdset);
+                    close(i);
                 }
                 else
                 {
                     fprintf(stdout, "%s", buf);
-                    for (i = 0; i < len; i++)
+                    for (int i = 0; i < len; i++)
                     {
                         buf[i] = toupper(buf[i]);
                     }
-                    send(cfd, buf, len, 0);
+                    send(i, buf, len, 0);
                 }
+                ret--;
             }
-        }
-        else
-        {
-            close(cfd);
         }
     }
     close(sfd);

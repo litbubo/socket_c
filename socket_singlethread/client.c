@@ -20,7 +20,7 @@ int main()
     struct sockaddr_in saddr;
     memset(buf, 0, sizeof(buf));
     fd = socket(AF_INET, SOCK_STREAM, 0);
-    if(fd < 0)
+    if (fd < 0)
     {
         perror("socket");
         exit(1);
@@ -29,12 +29,12 @@ int main()
     saddr.sin_port = htons(PORT);
     inet_pton(AF_INET, SERVERIP, &saddr.sin_addr);
     ret = connect(fd, (void *)&saddr, sizeof(saddr));
-    if(ret < 0)
+    if (ret < 0)
     {
         perror("connect");
         exit(1);
     }
-    while(1)
+    while (1)
     {
         memset(buf, 0, BUFSIZE);
         fgets(buf, BUFSIZE, stdin);
@@ -50,4 +50,3 @@ int main()
     printf("Hello world\n");
     return 0;
 }
-
