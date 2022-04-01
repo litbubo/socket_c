@@ -19,7 +19,7 @@ typedef struct SockInfo
 {
     int fd;
     int epfd;
-}SockInfo_t;
+} SockInfo_t;
 
 void *working(void *arg)
 {
@@ -28,9 +28,9 @@ void *working(void *arg)
     int len, i;
     memset(buf, 0, BUFSIZE);
     int flag = fcntl(sock->fd, F_GETFL);
-    flag |= O_NONBLOCK;                                                        
+    flag |= O_NONBLOCK;
     fcntl(sock->fd, F_SETFL, flag);
-    while(1)
+    while (1)
     {
         len = recv(sock->fd, buf, sizeof(buf) - 1, 0);
         buf[len] = 0;
@@ -43,7 +43,7 @@ void *working(void *arg)
         }
         else if (len < 0)
         {
-            if(errno == EAGAIN)
+            if (errno == EAGAIN)
                 break;
             perror("recv");
             epoll_ctl(sock->epfd, EPOLL_CTL_DEL, sock->fd, NULL);
@@ -103,7 +103,7 @@ int main()
     socklen = sizeof(caddr);
 
     epfd = epoll_create(100);
-    if(epfd < 0)
+    if (epfd < 0)
     {
         perror("epoll_create");
         exit(1);
@@ -120,10 +120,10 @@ int main()
     {
 
         ret = epoll_wait(epfd, evt, 1024, -1);
-        for(i = 0; i < ret; i++)
+        for (i = 0; i < ret; i++)
         {
             fd = evt[i].data.fd;
-            if(fd == sfd)
+            if (fd == sfd)
             {
                 cfd = accept(fd, (void *)&caddr, &socklen);
                 if (cfd < 0)
@@ -139,7 +139,7 @@ int main()
                 epoll_ctl(epfd, EPOLL_CTL_ADD, cfd, &ev);
             }
             else
-            { 
+            {
                 pthread_t tid;
                 SockInfo_t *sock = malloc(sizeof(SockInfo_t));
                 sock->fd = fd;

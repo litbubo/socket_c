@@ -55,7 +55,7 @@ int main()
 
     socklen = sizeof(caddr);
 
-    for(i = 0; i < 1024; i++)
+    for (i = 0; i < 1024; i++)
     {
         mypoll[i].fd = -1;
         mypoll[i].events = POLLIN;
@@ -66,12 +66,12 @@ int main()
     while (1)
     {
         ret = poll(mypoll, max + 1, -1);
-        if(ret < 0)
+        if (ret < 0)
         {
             perror("poll");
             exit(1);
         }
-        if(mypoll[0].revents & POLLIN)
+        if (mypoll[0].revents & POLLIN)
         {
             cfd = accept(sfd, (void *)&caddr, &socklen);
             if (cfd < 0)
@@ -82,20 +82,20 @@ int main()
             fprintf(stdout, "[%s]:%d connect ...\n",
                     inet_ntop(AF_INET, &caddr.sin_addr.s_addr, ip, sizeof(ip)),
                     ntohs(caddr.sin_port));
-            for(i = 0; i < 1024; i++)
+            for (i = 0; i < 1024; i++)
             {
-                if(mypoll[i].fd == -1)
+                if (mypoll[i].fd == -1)
                 {
                     mypoll[i].fd = cfd;
                     max = i > max ? i : max;
                     break;
                 }
             }
-            ret --;
+            ret--;
         }
-        for(i = 1; i < 1024 && ret > 0; i++)
+        for (i = 1; i < 1024 && ret > 0; i++)
         {
-            if(mypoll[i].revents & POLLIN)
+            if (mypoll[i].revents & POLLIN)
             {
                 memset(buf, 0, BUFSIZE);
                 len = recv(mypoll[i].fd, buf, sizeof(buf) - 1, 0);
@@ -121,10 +121,9 @@ int main()
                     }
                     send(mypoll[i].fd, buf, len, 0);
                 }
-                ret --;
+                ret--;
             }
         }
-
     }
     close(sfd);
     exit(0);

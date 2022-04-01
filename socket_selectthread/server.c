@@ -130,7 +130,7 @@ int main()
         int maxtmp = maxfd;
         pthread_mutex_unlock(&mutex);
         ret = select(maxtmp + 1, &tmpset, NULL, NULL, NULL);
-        if(FD_ISSET(sfd, &tmpset))
+        if (FD_ISSET(sfd, &tmpset))
         {
             pthread_t tid;
             SockInfo_t *sock;
@@ -140,13 +140,13 @@ int main()
             sock->rdset = &rdset;
             pthread_create(&tid, NULL, acception, sock);
             pthread_detach(tid);
-            ret --;
+            ret--;
         }
         printf("------------------------\n");
-        //for(i = 0; i < maxtmp + 1 && ret > 0; i++ )
-        for(i = 0; i < 1024 + 1; i++ )
+        // for(i = 0; i < maxtmp + 1 && ret > 0; i++ )
+        for (i = 0; i < 1024 + 1; i++)
         {
-            if(i != sfd && FD_ISSET(i, &tmpset))
+            if (i != sfd && FD_ISSET(i, &tmpset))
             {
                 pthread_t tid;
                 SockInfo_t *sock;
@@ -157,7 +157,7 @@ int main()
                 fprintf(stdout, "%d thread is going to create...\n", i);
                 pthread_create(&tid, NULL, communication, sock);
                 pthread_detach(tid);
-                //ret --;
+                // ret --;
             }
         }
     }

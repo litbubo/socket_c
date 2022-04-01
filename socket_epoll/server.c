@@ -55,7 +55,7 @@ int main()
     socklen = sizeof(caddr);
 
     epfd = epoll_create(100);
-    if(epfd < 0)
+    if (epfd < 0)
     {
         perror("epoll_create");
         exit(1);
@@ -72,10 +72,10 @@ int main()
     {
 
         ret = epoll_wait(epfd, evt, 1024, -1);
-        for(i = 0; i < ret; i++)
+        for (i = 0; i < ret; i++)
         {
             fd = evt[i].data.fd;
-            if(fd == sfd)
+            if (fd == sfd)
             {
                 tmpfd = accept(fd, (void *)&caddr, &socklen);
                 if (tmpfd < 0)
@@ -91,7 +91,7 @@ int main()
                 epoll_ctl(epfd, EPOLL_CTL_ADD, tmpfd, &ev);
             }
             else
-            { 
+            {
                 memset(buf, 0, BUFSIZE);
                 len = recv(fd, buf, sizeof(buf) - 1, 0);
                 buf[len] = 0;
@@ -116,7 +116,6 @@ int main()
                     }
                     send(fd, buf, len, 0);
                 }
-
             }
         }
     }
